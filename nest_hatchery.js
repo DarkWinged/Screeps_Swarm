@@ -1,8 +1,135 @@
-var nest require('nest')
-var hatchery = {
-    init: function(Entity_ID_A, Entity_ID_B){
-        nest.init(Entity_ID_A, Entity_ID_B)
+var nest = require('nest');
+var nest_hatchery = {
+    //require('nest_hatchery').init();
+    init: function(Entity_ID){
+        nest.init(Entity_ID);
+        let Nest_ID = '' + Entity_ID;
+        Memory.nests[Nest_ID].Role = 'hatchery';
+        Memory.nests[Nest_ID].Drone_Queue = [];
+        Memory.nests[Nest_ID].Queue_Current = {state: false};
+        Memory.nests[Nest_ID].Queue_Cost = 0;
+    },
+    
+    calculate_cost: function(genome, Entity_ID){
+        let total_cost = 0;
+        
+        //constant
+        const gene_cost = {MOVE:50,WORK:100,CARRY:50,ATTACK:80,RANGED_ATTACK:150,HEAL:250,CLAIM:600,TOUGH:10};
+        
+        for(let gene in genome){
+            total_cost += (gene_cost[gene]*genome[gene]);
+        }
+        
+        if(total_cost > Game.getObjectById(Entity_ID).store.getCapacity(RESOURCE_ENERGY)) {
+            return -1;
+        } else {
+            return total_cost;
+        }
+    },
+    
+    compose_dna: function(genome){
+        let dna = [];
+        
+        for(let gene in genome){
+            for(var w = 0; w < genome[gene]; w++){
+                switch(gene){
+                    case 'MOVE':
+                        dna.push(MOVE);
+                        break;
+                    case 'WORK':
+                        dna.push(WORK);
+                        break;
+                    case 'CARRY':
+                        dna.push(CARRY);
+                        break;
+                    case 'ATTACK':
+                        dna.push(ATTACK);
+                        break;
+                    case 'RANGED_ATTACK':
+                        dna.push(RANGED_ATTACK);
+                        break;
+                    case 'HEAL':
+                        dna.push(HEAL);
+                        break;
+                    case 'CLAIM':
+                        dna.push(CLAIM);
+                        break;
+                    case 'TOUGH':
+                        dna.push(TOUGH);
+                        break;
+                }
+            }
+        }
+        
+        return dna;
+    },
+    
+    grow_drone: function(species, Spawn_ID){
+        //utility
+        let spawn = Game.getObjectById(Spawn_ID);
+        let dna = require('nest_hatchery').compose_dna(species.genome);
+        var newName = '' + species.s_name + Game.time + 'x' + Math.round(Math.random()*1000) + 'X';
+        
+        console.log('Spawning new ' + species.s_name + ': ' + newName);
+        
+        spawn.spawnCreep(dna, newName);
+        switch(species.role){
+            case 'harvester':
+                require('drone_harvester').init(newName, Spawn_ID);
+                require('job_harvest').init(newName, spawn.room.find(FIND_SOURCES)[0].id);
+                require('job_route').init(newName, Spawn_ID);
+                break;
+            case 'transporter':
+                require('drone_transporter').init(newName, Spawn_ID);
+                require('job_route').assign(newName);
+                break;
+        }
+    },
+    
+    process_queue: function(Entity_ID){
+        if(Memory.nests[Entity_ID].Drone_Queue.length != 0 || Memory.nests[Entity_ID].Queue_Current.state != false){
+            let spawn = Game.getObjectById(Entity_ID);
+            if(!spawn.spawning){
+                
+                /*Game.map.visual.text(
+                    'Energy:' + spawn.store.getUsedCapacity(RESOURCE_ENERGY) + '/' + Memory.nests[Entity_ID].Queue_Cost,
+                    spawn.room.getPositionAt(spawn.pos.x + 3, spawn.pos.y - 0.25)
+                    );*/
+                    
+                if(Memory.nests[Entity_ID].Queue_Current.state == false){
+                    Memory.nests[Entity_ID].Drone_Queue.reverse();
+                    Memory.nests[Entity_ID].Queue_Current = Memory.nests[Entity_ID].Drone_Queue.pop();
+                    Memory.nests[Entity_ID].Drone_Queue.reverse();
+                    Memory.nests[Entity_ID].Queue_Cost = require('nest_hatchery').calculate_cost(Memory.nests[Entity_ID].Queue_Current.genome, Entity_ID);
+                }
+                
+                switch(Memory.nests[Entity_ID].Queue_Cost){
+                    case -1:
+                        Memory.nests[Entity_ID].Queue_Current = {state: false};
+                        Memory.nests[Entity_ID].Queue_Cost = 0;
+                        break;
+                    default :
+                        if(Memory.nests[Entity_ID].Queue_Cost <= spawn.store.getUsedCapacity(RESOURCE_ENERGY)){
+                            require('nest_hatchery').grow_drone(Memory.nests[Entity_ID].Queue_Current, Entity_ID);
+                            Memory.nests[Entity_ID].Queue_Current = {state: false};
+                            Memory.nests[Entity_ID].Queue_Cost = 0;
+                        }
+                        break;
+                }
+            }
+        }
+    },
+    
+    //require('nest_hatchery').queue_harvester()
+    queue_harvester: function(Entity_ID){
+        let Nest_ID = '' + Entity_ID;
+        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'harvester', role: 'harvester', genome: {WORK:1,MOVE:1,CARRY:1}});
+    },
+    
+    queue_transporter: function(Entity_ID){
+        let Nest_ID = '' + Entity_ID;
+        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'transporter', role: 'transporter', genome: {MOVE:1,CARRY:2}});
     }
 };
 
-module.exports = hatchery;
+module.exports = nest_hatchery;

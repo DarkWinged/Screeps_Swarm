@@ -20,7 +20,7 @@ var job_route = {
                     creep.moveTo(start.pos.x,start.pos.y);
                 }
             } else {
-                if(creep.transfer(end, RESOURCE_ENERGY, creep.store.getCapacity()) == ERR_NOT_IN_RANGE){
+                if(creep.transfer(end, RESOURCE_ENERGY, creep.store.getCapacity(RESOURCE_ENERGY)) == ERR_NOT_IN_RANGE){
                     creep.moveTo(end);
                 }
             }
@@ -36,7 +36,7 @@ var job_route = {
             if(Memory.jobs[job_id].Assigned_ID == 'null'){
                 Memory.jobs[job_id].Assigned_ID = creep.name;
                 if(Memory.jobs[job_id].Cargo_Min == 'null'){
-                    Memory.jobs[job_id].Cargo_Min = Game.creeps[Memory.jobs[job_id].Source_ID].store.getCapacity();
+                    Memory.jobs[job_id].Cargo_Min = Game.creeps[Memory.jobs[job_id].Source_ID].store.getCapacity(RESOURCE_ENERGY);
                 }
                 break;
             }

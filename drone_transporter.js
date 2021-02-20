@@ -3,6 +3,7 @@ var transporter = {
     init: function(Entity_ID_A, Entity_ID_B){
         drone.init(Entity_ID_A, Entity_ID_B)
         Memory.drones[Entity_ID_A].Transport_State = true;
+        Memory.drones[Entity_ID_A].Drone_Role = 'transporter';
     }
 };
 
