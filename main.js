@@ -47,11 +47,11 @@ module.exports.loop = function () {
     //console.log(cleanup);
     
     for(let closed_job in job_cleanup){
-        let job_id = '' + job_cleanup[closed_job].Source_ID + '-' + job_cleanup[closed_job].Target_ID;
-        if(Memory.jobs[job_id] != undefined)
-            require('job').close_job(job_id);
+        let Job_ID = '' + job_cleanup[closed_job].Source_ID + '-' + job_cleanup[closed_job].Target_ID;
+        if(Memory.jobs[Job_ID] != undefined)
+            require('job').close_job(Job_ID);
         else
-            delete(Memory.jobs[job_id]);
+            delete(Memory.jobs[Job_ID]);
     }
 
     for(let entity in drone_cleanup){
@@ -61,21 +61,14 @@ module.exports.loop = function () {
         console.log('opened jobs:', opened_jobs.length);
         console.log('Deleted Drone: ', entity_id);
         for(let closed_job in closed_jobs){
-            let job_id = '' + closed_jobs[closed_job].Source_ID + '-' + closed_jobs[closed_job].Target_ID;
-            require('job').close_job(job_id);
+            let Job_ID = '' + closed_jobs[closed_job].Source_ID + '-' + closed_jobs[closed_job].Target_ID;
+            require('job').close_job(Job_ID);
         }
         for(let opened_job in opened_jobs){
-            let job_id = '' + opened_jobs[opened_job].Source_ID + '-' + opened_jobs[opened_job].Target_ID;
-            console.log('pre delete:', Memory.jobs[job_id].Assigned_ID.length);
-            do {
-                Memory.jobs[job_id].Assigned_ID.reverse();
-                test = Memory.jobs[job_id].Assigned_ID.pop();
-                Memory.jobs[job_id].Assigned_ID.reverse();
-                if(entity_id != test){
-                    Memory.jobs[job_id].Assigned_ID.push (Memory.jobs[job_id].Assigned_ID);
-                }
-            } while(entity_id != test);
-            console.log('post delete:', Memory.jobs[job_id].Assigned_ID.length);
+            let Job_ID = '' + opened_jobs[opened_job].Source_ID + '-' + opened_jobs[opened_job].Target_ID;
+            console.log('pre delete:', Memory.jobs[Job_ID].Assigned_ID.length);
+            Memory.jobs[Job_ID].Assigned_ID = _.filter(Memory.jobs[Job_ID].Assigned_ID, (eitity) => eitity != entity_id);
+            console.log('post delete:', Memory.jobs[Job_ID].Assigned_ID.length);
         }
         delete(Memory.drones[entity_id]);
         delete(Memory.creeps[entity_id]);
@@ -109,37 +102,37 @@ module.exports.loop = function () {
             }
         }
     }
-
+    
     let jobs = Memory.jobs;
-    let = harvest_count = 0;
-    let = route_count = 0;
+    let harvest_count = 0;
+    let route_count = 0;
     
     for(let job in jobs){
-        let job_id = '' + jobs[job].Source_ID + '-' + jobs[job].Target_ID;
-        if(Memory.jobs[job_id] != undefined){
-            switch(Memory.jobs[job_id].Job_Type){
+        let Job_ID = '' + jobs[job].Source_ID + '-' + jobs[job].Target_ID;
+        if(Memory.jobs[Job_ID] != undefined){
+            switch(Memory.jobs[Job_ID].Job_Type){
                 case 'route':
-                    require('job_route').work(job_id);
-                    route_count += Memory.jobs[job_id].Assigned_Max;
+                    require('job_route').work(Job_ID);
+                    route_count += Memory.jobs[Job_ID].Assigned_Max;
                     break;
                 case 'harvest':
-                    require('job_harvest').work(job_id);
-                    harvest_count += Memory.jobs[job_id].Assigned_Max;
+                    require('job_harvest').work(Job_ID);
+                    harvest_count += Memory.jobs[Job_ID].Assigned_Max;
                     break; 
                 case 'build':
-                    require('job_build').work(job_id);
+                    require('job_build').work(Job_ID);
                     break;
                 case 'upgrade':
-                    require('job_upgrade').work(job_id);
+                    require('job_upgrade').work(Job_ID);
                     break;
             };   
         } else {
-            delete(Memory.jobs[job_id]);
+            delete(Memory.jobs[Job_ID]);
         }
     }
     
     let roles = ['transporter','harvester','builder'];
-    for(role in roles){
+    for(let role in roles){
         let filtered_drones = _.filter(Memory.drones, (Drone) => Drone.Drone_Role == roles[role]);
         filtered_drones = filtered_drones.concat(_.filter(Memory.nests[Game.spawns['Spawn1'].id].Drone_Queue, (Drone) => Drone.role == roles[role]));
         if(Memory.nests[Game.spawns['Spawn1'].id].Queue_Current.role == roles[role]){
@@ -157,7 +150,7 @@ module.exports.loop = function () {
                 }
                 break;
             case 'builder':
-                if(10 - filtered_drones.length > 0){
+                if(3 - filtered_drones.length > 0){
                     require('nest_hatchery').queue_builder(Game.spawns['Spawn1'].id);
                 }
                 break;

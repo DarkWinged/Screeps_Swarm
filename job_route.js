@@ -38,6 +38,8 @@ var job_route = {
                         }
                     }
                 }
+            } else {
+                Memory.jobs[Job_ID].Assigned_ID = _.filter(Memory.jobs[Job_ID].Assigned_ID, (eitity) => eitity != drone);
             }
         }
     },
@@ -45,17 +47,17 @@ var job_route = {
     assign: function(Drone_ID){
         let jobs = _.filter(Memory.jobs, (Job) => Job.Job_Type == 'route');
         for(var job in jobs){
-            let job_id = '' + jobs[job].Source_ID + '-' + jobs[job].Target_ID;
-            if(Memory.jobs[job_id].Assigned_ID.length < Memory.jobs[job_id].Assigned_Max){
-                Memory.jobs[job_id].Assigned_ID.push(Drone_ID);
+            let Job_ID = '' + jobs[job].Source_ID + '-' + jobs[job].Target_ID;
+            if(Memory.jobs[Job_ID].Assigned_ID.length < Memory.jobs[Job_ID].Assigned_Max){
+                Memory.jobs[Job_ID].Assigned_ID.push(Drone_ID);
                 return true;
             }
         }
         return false;
     },
 
-    close_job: function(job_id){
-        job.init(job_id);
+    close_job: function(Job_ID){
+        job.init(Job_ID);
     }
         
 };

@@ -66,8 +66,8 @@ var job_upgrade = {
         return false;
     },
 
-    close_job: function(job_id){
-        job.init(job_id);
+    close_job: function(Job_ID){
+        job.init(Job_ID);
     }
      
 };

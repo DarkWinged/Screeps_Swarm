@@ -11,13 +11,13 @@ var job = {
         console.log('New Job: ' + Job_ID);
     },
 
-    close_job: function(job_id){
-        for(let drone in Memory.jobs[job_id].Assigned_ID){
-            if(Game.creeps[Memory.jobs[job_id].Assigned_ID[drone]])
-                Memory.jobless.push(Memory.jobs[job_id].Assigned_ID[drone]);
+    close_job: function(Job_ID){
+        for(let drone in Memory.jobs[Job_ID].Assigned_ID){
+            if(Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]])
+                Memory.jobless.push(Memory.jobs[Job_ID].Assigned_ID[drone]);
         }
-        console.log('Closed Job: ', job_id);
-        delete(Memory.jobs[job_id]);
+        console.log('Closed Job: ', Job_ID);
+        delete(Memory.jobs[Job_ID]);
     }
 };
 
