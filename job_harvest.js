@@ -13,9 +13,10 @@ var job_harvest = {
             if(Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]]){
                 let creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]];
                 let source = Game.getObjectById(Memory.jobs[Job_ID].Target_ID);
+                //console.log(source);
                 if(creep.store.getFreeCapacity() > 0){
                     if(creep.harvest(source) == ERR_NOT_IN_RANGE){
-                        creep.moveTo(source.pos.x,source.pos.y, {visualizePathStyle: {stroke: '#ffffff'}});
+                        creep.moveTo(source, {visualizePathStyle: {stroke: '#ffffff'}});
                     } else {
                         Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]].Fitness_Score += 2;
                     }
@@ -40,7 +41,7 @@ var job_harvest = {
     },
 
     close_job: function(Job_ID){
-        job.init(Job_ID);
+        job.close_job(Job_ID);
     }
       
 };

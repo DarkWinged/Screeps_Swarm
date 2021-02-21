@@ -13,7 +13,7 @@ var job = {
 
     close_job: function(Job_ID){
         for(let drone in Memory.jobs[Job_ID].Assigned_ID){
-            if(Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]])
+            if(Memory.jobs[Job_ID].Assigned_ID[drone] != null && Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]])
                 Memory.jobless.push(Memory.jobs[Job_ID].Assigned_ID[drone]);
         }
         console.log('Closed Job: ', Job_ID);

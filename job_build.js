@@ -63,7 +63,7 @@ var job_build = {
     },
 
     close_job: function(Job_ID){
-        job.init(Job_ID);
+        job.close_job(Job_ID);
     }
      
 };

@@ -14,6 +14,7 @@ var job_upgrade = {
             if(Memory.jobs[Job_ID].Assigned_ID.length > Memory.jobs[Job_ID].Assigned_Max){
                 Memory.jobless.push(Memory.jobs[Job_ID].Assigned_ID[drone]);
                 delete(Memory.jobs[Job_ID].Assigned_ID[drone]);
+                Memory.jobs[Job_ID].Assigned_ID = _.filter(Memory.jobs[Job_ID].Assigned_ID, (entity) => entity != null);
             } else if(creep) {
                 let spawn  = Game.getObjectById(Memory.jobs[Job_ID].Source_ID);
 
@@ -67,7 +68,7 @@ var job_upgrade = {
     },
 
     close_job: function(Job_ID){
-        job.init(Job_ID);
+        job.close_job(Job_ID);
     }
      
 };

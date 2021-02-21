@@ -14,6 +14,7 @@ var nest_hatchery = {
             require('job_harvest').init(Nest_ID, sources[ESource].id);
         };
         require('job_upgrade').init(Nest_ID,Game.getObjectById(Nest_ID).room.controller);
+        require('job_scout').init(Nest_ID,'Flag1');
     },
     
     calculate_cost: function(genome, Entity_ID){
@@ -93,6 +94,10 @@ var nest_hatchery = {
                 require('drone_builder').init(newName, Spawn_ID);
                 Memory.jobless.push(newName);
                 break;
+            case 'scout':
+                require('drone_scout').init(newName, Spawn_ID);
+                Memory.jobless.push(newName);
+                break;
         }
     },
     
@@ -153,6 +158,11 @@ var nest_hatchery = {
     queue_builder: function(Entity_ID){
         let Nest_ID = '' + Entity_ID;
         Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'builder', role: 'builder', genome: {WORK:1,MOVE:1,CARRY:1}});
+    },
+
+    queue_scout: function(Entity_ID){
+        let Nest_ID = '' + Entity_ID;
+        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'scout', role: 'scout', genome: {MOVE:4, ATTACK:1}});
     }
 };
 

@@ -50,8 +50,10 @@ module.exports.loop = function () {
         let Job_ID = '' + job_cleanup[closed_job].Source_ID + '-' + job_cleanup[closed_job].Target_ID;
         if(Memory.jobs[Job_ID] != undefined)
             require('job').close_job(Job_ID);
-        else
+        else{
             delete(Memory.jobs[Job_ID]);
+            Memory.jobs = _.filter(Memory.jobs, (job) => job != null);
+        }
     }
 
     for(let entity in drone_cleanup){
@@ -74,6 +76,7 @@ module.exports.loop = function () {
         delete(Memory.creeps[entity_id]);
     }
 
+    Memory.jobless = _.filter(Memory.jobless, (job) => job != null);
     if(Memory.jobless.length > 0){
         Memory.jobless.reverse();
         let unemployed_id = Memory.jobless.pop();
@@ -125,13 +128,17 @@ module.exports.loop = function () {
                 case 'upgrade':
                     require('job_upgrade').work(Job_ID);
                     break;
+                case 'scout':
+                    require('job_scout').work(Job_ID);
+                    break;
             };   
         } else {
             delete(Memory.jobs[Job_ID]);
+            Memory.jobs = _.filter(Memory.jobs, (job) => job != null);
         }
     }
     
-    let roles = ['transporter','harvester','builder'];
+    let roles = ['transporter','harvester','builder','scout'];
     for(let role in roles){
         let filtered_drones = _.filter(Memory.drones, (Drone) => Drone.Drone_Role == roles[role]);
         filtered_drones = filtered_drones.concat(_.filter(Memory.nests[Game.spawns['Spawn1'].id].Drone_Queue, (Drone) => Drone.role == roles[role]));
@@ -152,6 +159,11 @@ module.exports.loop = function () {
             case 'builder':
                 if(3 - filtered_drones.length > 0){
                     require('nest_hatchery').queue_builder(Game.spawns['Spawn1'].id);
+                }
+                break;
+            case 'scout':
+                if(1 - filtered_drones.length > 0){
+                    require('nest_hatchery').queue_scout(Game.spawns['Spawn1'].id);
                 }
                 break;
         }

@@ -10,7 +10,7 @@ var job_route = {
     
     work: function(Job_ID){
         for(let drone in Memory.jobs[Job_ID].Assigned_ID){
-            if(Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]]){
+            if(Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]] != undefined){
                 let creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]];
                 let start = Game.creeps[Memory.jobs[Job_ID].Source_ID];
                 let end = creep.pos.findClosestByPath(FIND_STRUCTURES, {
@@ -19,10 +19,15 @@ var job_route = {
                             structure.store.getFreeCapacity(RESOURCE_ENERGY) >= 25);
                     }
                 });
-                
+
+                if(end == null){
+                    end = Game.getObjectById(Memory.drones[creep.name].Spawn_ID);
+                    //console.log(creep.name, end);
+                }
+
                 if(!Memory.drones[creep.name].State){
                     if(start.transfer(creep, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE){
-                        creep.moveTo(start.pos.x,start.pos.y, {visualizePathStyle: {stroke: '#ffffff'}});
+                        creep.moveTo(start, {visualizePathStyle: {stroke: '#ffffff'}});
                     } else {
                         if(creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0){
                             Memory.drones[creep.name].State = true;
@@ -39,7 +44,9 @@ var job_route = {
                     }
                 }
             } else {
-                Memory.jobs[Job_ID].Assigned_ID = _.filter(Memory.jobs[Job_ID].Assigned_ID, (eitity) => eitity != drone);
+                console.log('drone', Memory.jobs[Job_ID].Assigned_ID[drone], 'does not exist!');
+                delete(Memory.jobs[Job_ID].Assigned_ID[drone]);
+                Memory.jobs[Job_ID].Assigned_ID = _.filter(Memory.jobs[Job_ID].Assigned_ID, (eitity) => eitity != null);
             }
         }
     },
@@ -57,7 +64,7 @@ var job_route = {
     },
 
     close_job: function(Job_ID){
-        job.init(Job_ID);
+        job.close_job(Job_ID);
     }
         
 };
