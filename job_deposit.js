@@ -5,7 +5,12 @@ var job_deposit = {
         job.init(Entity_ID_A, Entity_ID_B);
         let Job_ID = '' + Entity_ID_A + '-' + Entity_ID_B;
         Memory.jobs[Job_ID].cargo_max = Game.creeps[Entity_ID_A].store.getCapacity();
+    },
+
+    close_job: function(job_id){
+        job.init(job_id);
     }
+     
 };
 
 module.exports = job_deposit;

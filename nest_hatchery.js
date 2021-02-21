@@ -13,6 +13,7 @@ var nest_hatchery = {
         for(var ESource in sources){
             require('job_harvest').init(Nest_ID, sources[ESource].id);
         };
+        require('job_upgrade').init(Nest_ID,Game.getObjectById(Nest_ID).room.controller);
     },
     
     calculate_cost: function(genome, Entity_ID){
@@ -90,7 +91,6 @@ var nest_hatchery = {
                 break;
             case 'builder':
                 require('drone_builder').init(newName, Spawn_ID);
-                require('job_build').init(newName, Spawn_ID);
                 Memory.jobless.push(newName);
                 break;
         }
@@ -119,7 +119,16 @@ var nest_hatchery = {
                         Memory.nests[Entity_ID].Current_Cost = 0;
                         break;
                     default :
-                        if(Memory.nests[Entity_ID].Current_Cost <= spawn.store.getUsedCapacity(RESOURCE_ENERGY)){
+                        let expansions = spawn.room.find(FIND_STRUCTURES, {
+                            filter: (structure) => {
+                                return (structure.structureType == STRUCTURE_EXTENSION)}
+                        });
+                        let expansion_sum = 0;
+                        for(structure in expansions){
+                            expansion_sum += expansions[structure].store.getUsedCapacity(RESOURCE_ENERGY);
+                        }
+                        let availible_energy = spawn.store.getUsedCapacity(RESOURCE_ENERGY) + expansion_sum;
+                        if(Memory.nests[Entity_ID].Current_Cost <= availible_energy){
                             require('nest_hatchery').grow_drone(Memory.nests[Entity_ID].Queue_Current, Entity_ID);
                             Memory.nests[Entity_ID].Queue_Current = {state: false};
                             Memory.nests[Entity_ID].Current_Cost = 0;
