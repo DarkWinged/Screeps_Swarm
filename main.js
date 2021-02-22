@@ -40,9 +40,11 @@ module.exports.loop = function () {
         }
     });
     let maintain_jobs = _.filter(Memory.jobs,(Job) => Job.Job_Type == 'repair');
-
+    
     if(maintain_sites.length > maintain_jobs.length){
-        maintain_sites = _.filter(maintain_sites, (job) => !maintain_jobs.includes(job.Source_ID + '-' + job.Target_ID))
+        for(let job in maintain_jobs){
+            maintain_sites = _.filter(maintain_sites, (site) => site.id != maintain_jobs[job].Source_ID);
+        }
         for(let site in maintain_sites){
             require('job_repair').init(maintain_sites[site].id, Game.spawns['Spawn1'].id);
         }
@@ -52,7 +54,9 @@ module.exports.loop = function () {
     let job_sites = _.filter(Memory.jobs,(Job) => Job.Job_Type == 'build');
 
     if(construct_sites.length > job_sites.length){
-        construct_sites = _.filter(construct_sites, (job) => !job_sites.includes(job.Source_ID + '-' + job.Target_ID))
+        for(let job in job_sites){
+            construct_sites = _.filter(construct_sites, (site) => site.id != job_sites[job].Source_ID);
+        }
         for(let site in construct_sites){
             require('job_build').init(construct_sites[site].id, Game.spawns['Spawn1'].id);
         }

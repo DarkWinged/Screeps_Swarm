@@ -16,6 +16,7 @@ var job_build = {
                 
                 let target = Game.getObjectById(Memory.jobs[Job_ID].Source_ID);
                 if(target) {
+                    creep.say('' + Math.floor((target.progress/target.progressTotal)*100) + '%');
                     if(creep.store[RESOURCE_ENERGY] < 1) {
                         if(Memory.nests[Memory.jobs[Job_ID].Target_ID].Drone_Queue.length == 0 && Memory.nests[Memory.jobs[Job_ID].Target_ID].Queue_Current.state == false){
                             let resuply = creep.pos.findClosestByPath(FIND_STRUCTURES, {
