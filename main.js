@@ -33,10 +33,26 @@ module.exports.loop = function () {
         }
     }
     
+    let maintain_sites = Game.spawns['Spawn1'].room.find(FIND_STRUCTURES, {
+        filter: (structure) => {
+            return ((structure.structureType != STRUCTURE_WALL && structure.structureType != STRUCTURE_RAMPART) &&
+                structure.hits < structure.hitsMax);
+        }
+    });
+    let maintain_jobs = _.filter(Memory.jobs,(Job) => Job.Job_Type == 'repair');
+
+    if(maintain_sites.length > maintain_jobs.length){
+        maintain_sites = _.filter(maintain_sites, (job) => !maintain_jobs.includes(job.Source_ID + '-' + job.Target_ID))
+        for(let site in maintain_sites){
+            require('job_repair').init(maintain_sites[site].id, Game.spawns['Spawn1'].id);
+        }
+    }
+
     let construct_sites = Game.spawns['Spawn1'].room.find(FIND_CONSTRUCTION_SITES);
     let job_sites = _.filter(Memory.jobs,(Job) => Job.Job_Type == 'build');
 
     if(construct_sites.length > job_sites.length){
+        construct_sites = _.filter(construct_sites, (job) => !job_sites.includes(job.Source_ID + '-' + job.Target_ID))
         for(let site in construct_sites){
             require('job_build').init(construct_sites[site].id, Game.spawns['Spawn1'].id);
         }
@@ -98,8 +114,13 @@ module.exports.loop = function () {
                         break;
                     case 'builder':
                         if(!require('job_upgrade').assign(unemployed_id))
-                            if(!require('job_build').assign(unemployed_id))
-                                Memory.jobless.push(unemployed_id);
+                            if(!require('job_repair').assign(unemployed_id))
+                                if(!require('job_build').assign(unemployed_id))
+                                    Memory.jobless.push(unemployed_id);
+                        break;
+                    case 'scout':
+                        if(!require('job_scout').assign(unemployed_id))
+                            Memory.jobless.push(unemployed_id);
                         break;
                 }
             }
@@ -127,6 +148,9 @@ module.exports.loop = function () {
                     break;
                 case 'upgrade':
                     require('job_upgrade').work(Job_ID);
+                    break;
+                case 'repair':
+                    require('job_repair').work(Job_ID);
                     break;
                 case 'scout':
                     require('job_scout').work(Job_ID);
@@ -157,7 +181,7 @@ module.exports.loop = function () {
                 }
                 break;
             case 'builder':
-                if(3 - filtered_drones.length > 0){
+                if(6 - filtered_drones.length > 0){
                     require('nest_hatchery').queue_builder(Game.spawns['Spawn1'].id);
                 }
                 break;

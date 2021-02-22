@@ -84,19 +84,15 @@ var nest_hatchery = {
             case 'harvester':
                 require('drone_harvester').init(newName, Spawn_ID);
                 require('job_route').init(newName, Spawn_ID);
-                Memory.jobless.push(newName);
                 break;
             case 'transporter':
                 require('drone_transporter').init(newName, Spawn_ID);
-                Memory.jobless.push(newName);
                 break;
             case 'builder':
                 require('drone_builder').init(newName, Spawn_ID);
-                Memory.jobless.push(newName);
                 break;
             case 'scout':
                 require('drone_scout').init(newName, Spawn_ID);
-                Memory.jobless.push(newName);
                 break;
         }
     },

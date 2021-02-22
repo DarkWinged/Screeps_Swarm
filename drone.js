@@ -5,6 +5,7 @@ var drone = {
             Spawn_ID:'' + Entity_ID_B,
             Fitness_Score: 100
         };
+        Memory.jobless.push(Entity_ID_A);
     }
 };
 
