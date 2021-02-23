@@ -16,8 +16,8 @@ var job_repair = {
                 let spawn  = Game.getObjectById(Memory.jobs[Job_ID].Target_ID);
 
                 let target = Game.getObjectById(Memory.jobs[Job_ID].Source_ID);
-                creep.say('' + Math.floor((target.hits/target.hitsMax)*100) + '%');
                 if(target && target.hits < target.hitsMax) {
+                    creep.say('R:' + Math.floor((target.hits/target.hitsMax)*100) + '%');
                     if(creep.store[RESOURCE_ENERGY] < 1) {
                         if(Memory.nests[Memory.jobs[Job_ID].Target_ID].Drone_Queue.length == 0 && Memory.nests[Memory.jobs[Job_ID].Target_ID].Queue_Current.state == false){
                             let resuply = creep.pos.findClosestByPath(FIND_STRUCTURES, {

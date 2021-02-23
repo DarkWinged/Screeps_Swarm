@@ -21,6 +21,7 @@ var job_upgrade = {
                 var target = spawn.room.controller;
                 if(target)
                 {
+                    creep.say('U:' + Math.floor((target.progress/target.progressTotal)*100) + '%');
                     if(creep.store[RESOURCE_ENERGY] < 1) {
                         if(Memory.nests[spawn.id].Drone_Queue.length == 0 && Memory.nests[spawn.id].Queue_Current.state == false){
                             let resuply = creep.pos.findClosestByPath(FIND_STRUCTURES, {

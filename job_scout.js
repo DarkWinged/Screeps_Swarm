@@ -5,15 +5,16 @@ var job_scout = {
         job.init(Source_ID, Target_ID);
         let Job_ID = '' + Source_ID + '-' + Target_ID;
         Memory.jobs[Job_ID].Job_Type = 'scout';
-        Memory.jobs[Job_ID].Assigned_Max = 1;
+        Memory.jobs[Job_ID].Assigned_Max = 10;
     },
     
     work: function(Job_ID){
         for(let drone in Memory.jobs[Job_ID].Assigned_ID){
-            if(Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]]){
+            creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]]
+            //console.log(Memory.jobs[Job_ID].Target_ID +','+ creep.name);
+            if(creep){
                 let flag = Game.flags[Memory.jobs[Job_ID].Target_ID];
-                let creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]];
-                //creep.say(flag.name);
+                //creep.say(creep.name);
                 //console.log(flag.pos +','+creep.pos);
                 if(flag != undefined){
                     if(creep.room != flag.room) {
@@ -47,18 +48,12 @@ var job_scout = {
                         else if(creep.pos.x != flag.pos.x || creep.pos.y != flag.pos.y){
                             creep.moveTo(flag, {visualizePathStyle: {stroke: '#ffaa00'}});
                         }
-                        return false;
                     }
-                    return false;
-                }
-                else
-                {
-                    return true;
                 }
             }
         }
     },
-
+    
     assign: function(Drone_ID){
         //let creep = Game.creeps[Drone_ID];
         //console.log(creep);
