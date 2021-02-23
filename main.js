@@ -20,7 +20,7 @@ module.exports.loop = function () {
     };
 
     let nest_roles = ['hatchery','tower'];
-    for(role in nest_roles){
+    for(let role in nest_roles){
         hive_mind.processNests(nest_roles[role]);
     }
     
@@ -32,8 +32,8 @@ module.exports.loop = function () {
 
     hive_mind.processUnemployment();
     
-    job_count = {'TRANSPORTER':0, 'HARVESTER':0, 'BUILDER':0, 'UPGRADER':0, 'REPAIRER':0, 'SCOUT':0};
-    jobs = _.filter(Memory.jobs, (job) => job != null);
+    let job_count = {'TRANSPORTER':0, 'HARVESTER':0, 'BUILDER':0, 'UPGRADER':0, 'REPAIRER':0, 'SCOUT':0};
+    let jobs = _.filter(Memory.jobs, (job) => job != null);
     for(let job in jobs){
         job_count = hive_mind.processJob(jobs[job].Source_ID + '-' + jobs[job].Target_ID, job_count);
     }
