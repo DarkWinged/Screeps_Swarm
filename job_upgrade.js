@@ -18,7 +18,7 @@ var job_upgrade = {
             } else if(creep) {
                 let spawn  = Game.getObjectById(Memory.jobs[Job_ID].Source_ID);
 
-                var target = spawn.room.controller;
+                var target = Game.getObjectById(Memory.jobs[Job_ID].Target_ID);
                 if(target)
                 {
                     creep.say('U:' + Math.floor((target.progress/target.progressTotal)*100) + '%');

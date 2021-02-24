@@ -10,7 +10,7 @@ var job_scout = {
     
     work: function(Job_ID){
         for(let drone in Memory.jobs[Job_ID].Assigned_ID){
-            creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]]
+            creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]];
             //console.log(Memory.jobs[Job_ID].Target_ID +','+ creep.name);
             if(creep){
                 let flag = Game.flags[Memory.jobs[Job_ID].Target_ID];
@@ -18,35 +18,53 @@ var job_scout = {
                 //console.log(flag.pos +','+creep.pos);
                 if(flag != undefined){
                     if(creep.room != flag.room) {
-                        
                         creep.moveTo(flag, {visualizePathStyle: {stroke: '#ffaa00'}});
-                        const found = creep.room.lookForAt(LOOK_STRUCTURES, flag.pos);
-                        //console.log(found[0]);
-                        if(found.length>0) {
-                            creep.attack(found[0]);
-                        }
-                        
-                        //console.log(flag.pos);
                     }
                     else{
-                        
-                        var closestHostile = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
-                        if(closestHostile != null && closestHostile != undefined) {
-                            if(creep.attack(closestHostile) == ERR_NOT_IN_RANGE){
-                                creep.moveTo(closestHostile, {visualizePathStyle: {stroke: '#ffaa00'}});
+                        const found = flag.pos.findClosestByRange(FIND_STRUCTURES, {
+                             filter: function(structure) {
+                                if(structure.structureType != STRUCTURE_ROAD && (structure.pos.x == flag.pos.x && structure.pos.y == flag.pos.y)){
+                                    return structure;
+                                }
                             }
-                        }
-                        
-                        
-                        const found = creep.room.lookForAt(LOOK_STRUCTURES, flag.pos);
-                        //console.log(found[0]);
-                        if(found.length>0) {
-                            if(creep.attack(found[0]) == ERR_NOT_IN_RANGE){
-                                creep.moveTo(flag, {visualizePathStyle: {stroke: '#ffaa00'}});
+                        });
+                        if(found != null && closestHostile != undefined) {
+                            if(creep.attack(found) == ERR_NOT_IN_RANGE){
+                                creep.moveTo(found, {visualizePathStyle: {stroke: '#ffaa00'}});
                             }
-                        }
-                        else if(creep.pos.x != flag.pos.x || creep.pos.y != flag.pos.y){
-                            creep.moveTo(flag, {visualizePathStyle: {stroke: '#ffaa00'}});
+                        } else {
+                            var closestHostile = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+                            if(closestHostile != null && closestHostile != undefined) {
+                                if(creep.attack(closestHostile) == ERR_NOT_IN_RANGE){
+                                    creep.moveTo(closestHostile, {visualizePathStyle: {stroke: '#ffaa00'}});
+                                }
+                            } else {
+                                let closestHostile = flag.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, {
+                                    filter: function(structure) {
+                                       if(structure.structureType != STRUCTURE_ROAD && structure.structureType != STRUCTURE_CONTROLLER){
+                                           return structure;
+                                       }
+                                   }
+                                });
+                                if(closestHostile != null && closestHostile != undefined){
+                                    if(creep.attack(closestHostile) == ERR_NOT_IN_RANGE){
+                                        creep.moveTo(closestHostile, {visualizePathStyle: {stroke: '#ffaa00'}});
+                                    } else if (creep.moveTo(closestHostile, {visualizePathStyle: {stroke: '#ffaa00'}}) == ERR_NO_PATH) { 
+                                        let closestHostile = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, {
+                                            filter: function(structure) {
+                                                if(structure.structureType != STRUCTURE_ROAD && structure.structureType != STRUCTURE_CONTROLLER){
+                                                    return structure;
+                                                }
+                                            }
+                                        });
+                                        if(creep.attack(closestHostile) == ERR_NOT_IN_RANGE){
+                                            creep.moveTo(closestHostile, {visualizePathStyle: {stroke: '#ffaa00'}});
+                                        }
+                                    }
+                                }else if(creep.pos != flag.pos){
+                                    creep.moveTo(flag, {visualizePathStyle: {stroke: '#ffaa00'}});
+                                }
+                            }
                         }
                     }
                 }

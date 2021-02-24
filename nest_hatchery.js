@@ -156,7 +156,7 @@ var nest_hatchery = {
     
     //require('nest_hatchery').queue_harvester()
     queue_harvester: function(Nest_ID){
-        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'harvester', role: 'harvester', genome: {WORK:3, MOVE:1, CARRY:1}});
+        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'harvester', role: 'harvester', genome: {WORK:5, MOVE:1, CARRY:1}});
     },
     
     queue_transporter: function(Nest_ID){
@@ -168,7 +168,7 @@ var nest_hatchery = {
     },
 
     queue_scout: function(Nest_ID){
-        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'scout', role: 'scout', genome: {TOUGH:2, MOVE:4, ATTACK:2}});
+        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'scout', role: 'scout', genome: {TOUGH:4, MOVE:4, ATTACK:2}});
     }
 };
 

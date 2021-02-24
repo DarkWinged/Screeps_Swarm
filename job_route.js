@@ -16,7 +16,7 @@ var job_route = {
                 let end = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                     filter: (structure) => {
                         return ((structure.structureType == STRUCTURE_EXTENSION || structure.structureType == STRUCTURE_SPAWN || structure.structureType == STRUCTURE_TOWER) &&
-                            structure.store.getFreeCapacity(RESOURCE_ENERGY) >= 25);
+                            structure.store.getFreeCapacity(RESOURCE_ENERGY) >= 50);
                     }
                 });
 
@@ -34,11 +34,11 @@ var job_route = {
                         }
                     }
                 } else {
-                    if(creep.transfer(end, RESOURCE_ENERGY, 25) == ERR_NOT_IN_RANGE){
+                    if(creep.transfer(end, RESOURCE_ENERGY, 50) == ERR_NOT_IN_RANGE){
                         creep.moveTo(end, {visualizePathStyle: {stroke: '#ffffff'}});
                     } else {
-                        Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]].Fitness_Score += 25;
-                        if(creep.store.getUsedCapacity(RESOURCE_ENERGY) < 25){
+                        Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]].Fitness_Score += 50;
+                        if(creep.store.getUsedCapacity(RESOURCE_ENERGY) < 50){
                             Memory.drones[creep.name].State = false;
                         }
                     }

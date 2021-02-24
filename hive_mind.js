@@ -18,7 +18,14 @@ var hive_mind = {
         for(let nest in nests){
             let spawn = Game.getObjectById(nests[nest].Nest_ID);
             if(spawn){
-                require('nest_hatchery').work(spawn.id);
+                switch(Nest_Role){
+                    case 'hatchery':
+                        require('nest_hatchery').work(spawn.id);
+                        break;
+                    case 'tower':
+                        require('nest_tower').work(spawn.id);
+                        break;
+                }
             }
         }
     },
@@ -38,13 +45,18 @@ var hive_mind = {
                 maintain_sites = _.filter(maintain_sites, (site) => site.id != maintain_jobs[job].Source_ID);
             }
             for(let site in maintain_sites){
-                require('job_repair').init(maintain_sites[site].id, spawn.id);
+                require('job_repair').init(maintain_sites[site].id, Hatchery_ID);
+                let upgrade_id = Hatchery_ID + '-' + spawn.room.controller.id;
+                if(Memory.jobs[upgrade_id].Assigned_Max > 3){    
+                    Memory.jobs[upgrade_id].Assigned_Max -= 1;
+                }
             }
         }
     },
 
-    createBuildJobs: function(){
-        let construct_sites = Game.spawns['Spawn1'].room.find(FIND_CONSTRUCTION_SITES);
+    createBuildJobs: function(Hatchery_ID){
+        let spawn = Game.getObjectById(Hatchery_ID);
+        let construct_sites = spawn.room.find(FIND_CONSTRUCTION_SITES);
         let job_sites = _.filter(Memory.jobs,(Job) => Job.Job_Type == 'build');
 
         if(construct_sites.length > job_sites.length){
@@ -52,7 +64,11 @@ var hive_mind = {
                 construct_sites = _.filter(construct_sites, (site) => site.id != job_sites[job].Source_ID);
             }
             for(let site in construct_sites){
-                require('job_build').init(construct_sites[site].id, Game.spawns['Spawn1'].id);
+                require('job_build').init(construct_sites[site].id, Hatchery_ID);
+                let upgrade_id = Hatchery_ID + '-' + spawn.room.controller.id;
+                if(Memory.jobs[upgrade_id].Assigned_Max > 3){    
+                    Memory.jobs[upgrade_id].Assigned_Max -= 1;
+                }
             }
         }
     },
@@ -73,14 +89,14 @@ var hive_mind = {
 
     cleanupDrones: function(){
         let drone_cleanup = _.filter(Memory.drones,(Drone) => !Game.creeps[Drone.Drone_ID]);
-
+        //Game.getObjectById(Drone.Spawn_ID).spawning.name != Drone.Drone_ID
         for(let drone in drone_cleanup){
             let Drone_ID = drone_cleanup[drone].Drone_ID;
             let closed_jobs = _.filter(Memory.jobs, (Job) => String('' + Job.Source_ID + '-' + Job.Target_ID).includes(Drone_ID));
             let opened_jobs = _.filter(Memory.jobs, (Job) => Job.Assigned_ID.includes(Drone_ID));
 
-            console.log('opened jobs:', opened_jobs.length);
-            console.log('Deleted Drone: ', Drone_ID);
+            //console.log('opened jobs:', opened_jobs.length);
+            //console.log('Deleted Drone: ', Drone_ID);
 
             for(let closed_job in closed_jobs){
                 let Job_ID = '' + closed_jobs[closed_job].Source_ID + '-' + closed_jobs[closed_job].Target_ID;
@@ -94,7 +110,6 @@ var hive_mind = {
                 Memory.jobs[Job_ID].Assigned_ID = _.filter(Memory.jobs[Job_ID].Assigned_ID, (eitity) => eitity != Drone_ID);
                 console.log('post delete:', Memory.jobs[Job_ID].Assigned_ID.length);
             }
-
             delete(Memory.drones[Drone_ID]);
             delete(Memory.creeps[Drone_ID]);
         }
@@ -127,8 +142,11 @@ var hive_mind = {
                         case 'builder':
                             if(!require('job_upgrade').assign(unemployed_id))
                                 if(!require('job_repair').assign(unemployed_id))
-                                    if(!require('job_build').assign(unemployed_id))
+                                    if(!require('job_build').assign(unemployed_id)){
                                         Memory.jobless.push(unemployed_id);
+                                        let spawn = Game.getObjectById(Memory.drones[unemployed_id].Spawn_ID);
+                                        Memory.jobs[spawn.id + '-' + spawn.room.controller.id].Assigned_Max += 1;
+                                    }
                             break;
                         case 'scout':
                             if(!require('job_scout').assign(unemployed_id))
@@ -198,7 +216,7 @@ var hive_mind = {
                 }
                 break;
             case 'scout':
-                if(2 - filtered_drones.length > 0){
+                if(10 - filtered_drones.length > 0){
                     require('nest_hatchery').queue_scout(Nest_ID);
                 }
                 break;

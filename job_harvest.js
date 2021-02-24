@@ -14,7 +14,13 @@ var job_harvest = {
                 let creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]];
                 let source = Game.getObjectById(Memory.jobs[Job_ID].Target_ID);
                 //console.log(source);
-                if(creep.store.getFreeCapacity() > 0){
+                let valid_container = creep.room.find(FIND_STRUCTURES, {
+                    filter: (structure) => {
+                        return ((structure.structureType == STRUCTURE_CONTAINER) &&
+                            (structure.pos.x == creep.pos.x && structure.pos.y == creep.pos.y));
+                    }
+                });
+                if(creep.store.getFreeCapacity() > 0 || (valid_container.length > 0 && valid_container[0].store.getFreeCapacity() > 0)){
                     if(creep.harvest(source) == ERR_NOT_IN_RANGE){
                         creep.moveTo(source, {visualizePathStyle: {stroke: '#ffffff'}});
                     } else {
