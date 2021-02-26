@@ -1,25 +1,30 @@
 var nest = require('nest');
 var nest_hatchery = {
     //require('nest_hatchery').init('8c172c4b1d50f789d3f131ec');
-    init: function(Nest_ID){
-        nest.init(Nest_ID);
-        Memory.nests[Nest_ID].Role = 'hatchery';
-        Memory.nests[Nest_ID].Drone_Queue = [];
-        Memory.nests[Nest_ID].Queue_Current = {state: false};
-        Memory.nests[Nest_ID].Current_Cost = 0;
-        let spawn = Game.getObjectById(Nest_ID);
+    init: function(nest_id){
+        nest.init(nest_id);
+        Memory.nests[nest_id].Role = 'hatchery';
+        Memory.nests[nest_id].Drone_Queue = [];
+        Memory.nests[nest_id].Queue_Current = {state: false};
+        Memory.nests[nest_id].Current_Cost = 0;
+        let spawn = Game.getObjectById(nest_id);
         var sources = spawn.room.find(FIND_SOURCES);
         for(var ESource in sources){
-            require('job_harvest').init(Nest_ID, sources[ESource].id);
+            require('job_harvest').init(nest_id, sources[ESource].id);
+            require('nest_hatchery').queue_harvester(nest_id);
+            require('nest_hatchery').queue_transporter(nest_id);
+            require('nest_hatchery').queue_transporter(nest_id);
         };
-        require('job_upgrade').init(Nest_ID,Game.getObjectById(Nest_ID).room.controller.id);
-        require('job_scout').init(Nest_ID,'Flag1');
+        require('job_upgrade').init(nest_id,Game.getObjectById(nest_id).room.controller.id);
+        require('job_scout').init(nest_id,'Flag1');
+        return nest_id;
     },
     
     work: function(Nest_ID){
         require('nest_hatchery').process_queue(Nest_ID);
     },
 
+    //This needs to be moved into a new class (genome? genewrite? Species?)
     calculate_cost: function(genome, Nest_ID){
         let total_cost = 0;
         
@@ -45,7 +50,8 @@ var nest_hatchery = {
             return total_cost;
         }
     },
-    
+
+    //This needs to be moved into a new class (genome? genewrite? Species?)
     compose_dna: function(genome){
         let dna = [];
         
@@ -93,14 +99,14 @@ var nest_hatchery = {
         
         spawn.spawnCreep(dna, drone_id);
         switch(species.role){
-            case 'harvester':
+            case 'harvest':
                 require('drone_harvester').init(drone_id, Spawn_ID);
                 require('job_route').init(drone_id, Spawn_ID);
                 break;
-            case 'transporter':
+            case 'transport':
                 require('drone_transporter').init(drone_id, Spawn_ID);
                 break;
-            case 'builder':
+            case 'build':
                 require('drone_builder').init(drone_id, Spawn_ID);
                 break;
             case 'scout':
@@ -134,15 +140,16 @@ var nest_hatchery = {
                     default :
                         let expansions = spawn.room.find(FIND_STRUCTURES, {
                             filter: (structure) => {
-                                return (structure.structureType == STRUCTURE_EXTENSION)}
+                                return (structure.structureType == STRUCTURE_EXTENSION)
+                            }
                         });
                         let expansion_sum = 0;
                         for(structure in expansions){
                             expansion_sum += expansions[structure].store.getUsedCapacity(RESOURCE_ENERGY);
                         }
                         let availible_energy = spawn.store.getUsedCapacity(RESOURCE_ENERGY) + expansion_sum;
-                        console.log('availible_energy:', availible_energy);
-                        console.log('Current_Cost:', Memory.nests[Nest_ID].Current_Cost);
+                        //console.log('availible_energy:', availible_energy);
+                        //console.log('Current_Cost:', Memory.nests[Nest_ID].Current_Cost);
                         if(Memory.nests[Nest_ID].Current_Cost <= availible_energy){
                             require('nest_hatchery').grow_drone(Memory.nests[Nest_ID].Queue_Current, Nest_ID);
                             Memory.nests[Nest_ID].Queue_Current = {state: false};
@@ -154,17 +161,17 @@ var nest_hatchery = {
         }
     },
     
-    //require('nest_hatchery').queue_harvester()
+    //The following queue functions need to be combined into a single queueDrone: function (ID, Role, (genome? genewrite? Species?))
     queue_harvester: function(Nest_ID){
-        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'harvester', role: 'harvester', genome: {WORK:5, MOVE:1, CARRY:1}});
+        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'harvest', role: 'harvest', genome: {WORK:5, MOVE:2, CARRY:1}});
     },
     
     queue_transporter: function(Nest_ID){
-        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'transporter', role: 'transporter', genome: {MOVE:2, CARRY:4}});
+        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'transport', role: 'transport', genome: {MOVE:2, CARRY:4}});
     },
 
     queue_builder: function(Nest_ID){
-        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'builder', role: 'builder', genome: {WORK:2, MOVE:2, CARRY:1}});
+        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'build', role: 'build', genome: {WORK:2, MOVE:2, CARRY:2}});
     },
 
     queue_scout: function(Nest_ID){

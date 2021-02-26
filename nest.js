@@ -1,6 +1,7 @@
 var nest = {
-    init: function(Entity_ID){
-        Memory.nests[Entity_ID] = {Nest_ID: '' + Entity_ID};
+    init: function(nest_id){
+        Memory.nests[nest_id] = {Nest_ID: nest_id};
+        return Memory.nests[nest_id].Nest_ID;
     }
 };
 

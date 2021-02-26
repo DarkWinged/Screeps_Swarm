@@ -1,8 +1,8 @@
 var drone = require('drone');
 var scout = {
-    init: function(Entity_ID_A, Entity_ID_B){
-        drone.init(Entity_ID_A, Entity_ID_B)
-        Memory.drones[Entity_ID_A].Drone_Role = 'scout';
+    init: function(drone_id, spawn_id){
+        drone.init(drone_id, spawn_id)
+        Memory.drones[drone_id].Drone_Role = 'scout';
     }
 };
 

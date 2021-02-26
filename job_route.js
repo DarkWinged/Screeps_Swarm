@@ -2,10 +2,10 @@ var job = require('job');
 var job_route = {
     //require('job_route').init('drone_id','nest_id')
     init: function(Source_ID, Target_ID){
-        job.init(Source_ID, Target_ID);
-        let Job_ID = '' + Source_ID + '-' + Target_ID;
-        Memory.jobs[Job_ID].Job_Type = 'route';
+        let Job_ID = job.init(Source_ID, Target_ID);
+        Memory.jobs[Job_ID].Job_Type = 'transport';
         Memory.jobs[Job_ID].Assigned_Max = 2;
+        return Job_ID;
     },
     
     work: function(Job_ID){
@@ -15,8 +15,15 @@ var job_route = {
                 let start = Game.creeps[Memory.jobs[Job_ID].Source_ID];
                 let end = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                     filter: (structure) => {
-                        return ((structure.structureType == STRUCTURE_EXTENSION || structure.structureType == STRUCTURE_SPAWN || structure.structureType == STRUCTURE_TOWER) &&
-                            structure.store.getFreeCapacity(RESOURCE_ENERGY) >= 50);
+                        return (
+                            (
+                                structure.structureType == STRUCTURE_EXTENSION ||
+                                structure.structureType == STRUCTURE_SPAWN ||
+                                structure.structureType == STRUCTURE_STORAGE ||
+                                structure.structureType == STRUCTURE_TOWER
+                            ) &&
+                            structure.store.getFreeCapacity(RESOURCE_ENERGY) >= 50
+                        );
                     }
                 });
 
@@ -38,6 +45,7 @@ var job_route = {
                         creep.moveTo(end, {visualizePathStyle: {stroke: '#ffffff'}});
                     } else {
                         Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]].Fitness_Score += 50;
+
                         if(creep.store.getUsedCapacity(RESOURCE_ENERGY) < 50){
                             Memory.drones[creep.name].State = false;
                         }
@@ -52,15 +60,7 @@ var job_route = {
     },
 
     assign: function(Drone_ID){
-        let jobs = _.filter(Memory.jobs, (Job) => Job.Job_Type == 'route');
-        for(var job in jobs){
-            let Job_ID = '' + jobs[job].Source_ID + '-' + jobs[job].Target_ID;
-            if(Memory.jobs[Job_ID].Assigned_ID.length < Memory.jobs[Job_ID].Assigned_Max){
-                Memory.jobs[Job_ID].Assigned_ID.push(Drone_ID);
-                return true;
-            }
-        }
-        return false;
+        return job.assign(Drone_ID, Memory.drones[Drone_ID].Drone_Role);
     },
 
     close_job: function(Job_ID){

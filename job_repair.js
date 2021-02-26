@@ -2,45 +2,26 @@ var job = require('job');
 var job_repair = {
     //require('job_harvest').init('drone_id','source_id')
     init: function(Source_ID, Target_ID){
-        job.init(Source_ID, Target_ID);
-        let Job_ID = '' + Source_ID + '-' + Target_ID;
+        let Job_ID = job.init(Source_ID, Target_ID);
         Memory.jobs[Job_ID].Job_Type = 'repair';
         Memory.jobs[Job_ID].Assigned_Max = 1;
+        return Job_ID;
     },
     
     
     work: function(Job_ID){
         for(let drone in Memory.jobs[Job_ID].Assigned_ID){
             let creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]];
-            if(creep){
-                let spawn  = Game.getObjectById(Memory.jobs[Job_ID].Target_ID);
 
+            if(creep){
                 let target = Game.getObjectById(Memory.jobs[Job_ID].Source_ID);
+
                 if(target && target.hits < target.hitsMax) {
                     creep.say('R:' + Math.floor((target.hits/target.hitsMax)*100) + '%');
-                    if(creep.store[RESOURCE_ENERGY] < 1) {
-                        if(Memory.nests[Memory.jobs[Job_ID].Target_ID].Drone_Queue.length == 0 && Memory.nests[Memory.jobs[Job_ID].Target_ID].Queue_Current.state == false){
-                            let resuply = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                                filter: (structure) => {
-                                    return ((structure.structureType == STRUCTURE_EXTENSION || structure.structureType == STRUCTURE_SPAWN ||
-                                        structure.structureType == STRUCTURE_CONTAINER) &&
-                                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0);
-                                }
-                            });
-                            if(creep.withdraw(resuply, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE){
-                                creep.moveTo(resuply, {visualizePathStyle: {stroke: '#ffffff'}});
-                            }
-                        } else {
-                            let resuply = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                                filter: (structure) => {
-                                    return ((structure.structureType == STRUCTURE_CONTAINER) &&
-                                        structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0);
-                                }
-                            });
-                            if(creep.withdraw(resuply, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE){
-                                creep.moveTo(resuply, {visualizePathStyle: {stroke: '#ffffff'}});
-                            }
-                        }
+
+                    if(creep.store[RESOURCE_ENERGY] < 1 || Memory.drones[creep.name].State == true) {
+                        Memory.drones[creep.name].State = true;
+                        require('job_build').resuply(creep.name);
                     } else if(creep.repair(target) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
                     } else {
@@ -54,17 +35,23 @@ var job_repair = {
     },
 
     assign: function(Drone_ID){
-        let jobs = _.filter(Memory.jobs, (Job) => Job.Job_Type == 'repair');
-        jobs = jobs.sort((a,b) => (Game.getObjectById(a.Source_ID).hits > Game.getObjectById(b.Source_ID).hits) ? 1 : -1);
-        for(var job in jobs){
+        let jobs = _.filter(Memory.jobs, (Job) => Job.Job_Type == 'repair' && Job.Assigned_ID.length < Job.Assigned_Max);
+        //console.log(jobs.length);
+        console.log('Positions for:', 'repair', jobs.length);
+        for(let job in jobs){
             let Job_ID = '' + jobs[job].Source_ID + '-' + jobs[job].Target_ID;
-            if(Memory.jobs[Job_ID].Assigned_ID.length < Memory.jobs[Job_ID].Assigned_Max){
-                Memory.jobs[Job_ID].Assigned_ID.push(Drone_ID);
-                console.log('New assignment:', Drone_ID, 'at', Job_ID);
-                return true;
+            let drone_ids = Memory.jobs[Job_ID].Assigned_ID;
+            console.log('Drones assigned to:', Job_ID, drone_ids.length, '/', Memory.jobs[Job_ID].Assigned_Max);
+            for(let id in drone_ids){
+                if(drone_ids[id] == Drone_ID){
+                    console.log('Is drone assigned:', Job_ID);
+                    return -1;
+                }
             }
+            Memory.jobs[Job_ID].Assigned_ID.push(Drone_ID);
+            return 0;
         }
-        return false;
+        return -2;
     },
 
     close_job: function(Job_ID){

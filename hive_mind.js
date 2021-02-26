@@ -7,9 +7,10 @@ var hive_mind = {
             Memory.jobless = [];
             require('nest_hatchery').init(Game.spawns['Spawn1'].id);
             Memory.init = true;
-            //for(name in Game.creeps){
-            //    Game.creeps[name].suicide();
-            //}
+            for(name in Game.creeps){
+                Game.creeps[name].suicide();
+            }
+            Memory.creeps = {};
         }
     },
     processNests: function(Nest_Role){
@@ -54,64 +55,77 @@ var hive_mind = {
         }
     },
 
-    createBuildJobs: function(Hatchery_ID){
+    createBuildJobs: function(Hatchery_ID, Target_Room){
         let spawn = Game.getObjectById(Hatchery_ID);
-        let construct_sites = spawn.room.find(FIND_CONSTRUCTION_SITES);
+        let construct_sites = Game.rooms[Target_Room].find(FIND_CONSTRUCTION_SITES);
         let job_sites = _.filter(Memory.jobs,(Job) => Job.Job_Type == 'build');
 
         if(construct_sites.length > job_sites.length){
+            let result = construct_sites.length - job_sites.length;
             for(let job in job_sites){
                 construct_sites = _.filter(construct_sites, (site) => site.id != job_sites[job].Source_ID);
             }
             for(let site in construct_sites){
-                require('job_build').init(construct_sites[site].id, Hatchery_ID);
+                require('job_build').init(Target_Room, construct_sites[site].id);
                 let upgrade_id = Hatchery_ID + '-' + spawn.room.controller.id;
                 if(Memory.jobs[upgrade_id].Assigned_Max > 3){    
                     Memory.jobs[upgrade_id].Assigned_Max -= 1;
                 }
             }
+            return result;
+        } else {
+            return 0;
         }
     },
 
     cleanupJobs: function(){
         let job_cleanup = _.filter(Memory.jobs,(Job) => !Game.creeps[Job.Source_ID] && !Game.getObjectById(Job.Source_ID));
     
-        for(let closed_job in job_cleanup){
-            let Job_ID = '' + job_cleanup[closed_job].Source_ID + '-' + job_cleanup[closed_job].Target_ID;
-            if(Memory.jobs[Job_ID] != undefined)
-                require('job').close_job(Job_ID);
-            else{
-                delete(Memory.jobs[Job_ID]);
-                //Memory.jobs = _.filter(Memory.jobs, (job) => job != null);
+        if(job_cleanup.length > 0){
+            for(let closed_job in job_cleanup){
+                let Job_ID = '' + job_cleanup[closed_job].Source_ID + '-' + job_cleanup[closed_job].Target_ID;
+
+                if(Memory.jobs[Job_ID] != undefined)
+                    require('job').close_job(Job_ID);
+                else{
+                    delete(Memory.jobs[Job_ID]);
+                    //Memory.jobs = _.filter(Memory.jobs, (job) => job != null);
+                }
             }
+            return true;
+        } else {
+            return false;
         }
     },
 
-    cleanupDrones: function(){
+    cleanupDrones: function(Spawn_ID){
         let drone_cleanup = _.filter(Memory.drones,(Drone) => !Game.creeps[Drone.Drone_ID]);
-        //Game.getObjectById(Drone.Spawn_ID).spawning.name != Drone.Drone_ID
-        for(let drone in drone_cleanup){
-            let Drone_ID = drone_cleanup[drone].Drone_ID;
-            let closed_jobs = _.filter(Memory.jobs, (Job) => String('' + Job.Source_ID + '-' + Job.Target_ID).includes(Drone_ID));
-            let opened_jobs = _.filter(Memory.jobs, (Job) => Job.Assigned_ID.includes(Drone_ID));
 
-            //console.log('opened jobs:', opened_jobs.length);
-            //console.log('Deleted Drone: ', Drone_ID);
+        if(drone_cleanup.length > 0){
+            for(let drone in drone_cleanup){
+                let Drone_ID = drone_cleanup[drone].Drone_ID;
+                console.log('Drone to Cleanup:', Drone_ID);
 
-            for(let closed_job in closed_jobs){
-                let Job_ID = '' + closed_jobs[closed_job].Source_ID + '-' + closed_jobs[closed_job].Target_ID;
-                require('job').close_job(Job_ID);
+                if(Memory.drones[Drone_ID] != undefined){
+                    let spawn = Game.getObjectById(Memory.drones[Drone_ID].Spawn_ID);
+
+                    if(spawn.spawing){
+                        if(!Game.creeps[Drone_ID] && spawn.spawing.name != Drone_ID){
+                            require('drone').terminate(Drone_ID);
+                        }
+                    } else {
+                        if(!Game.creeps[Drone_ID]){
+                            require('drone').terminate(Drone_ID);
+                        }
+                    }
+                } else {
+                    delete(Memory.drones[Drone_ID]);
+                    delete(Memory.creeps[Drone_ID]);
+                }
             }
-
-            for(let opened_job in opened_jobs){
-                console.log('' + opened_jobs[opened_job].Source_ID + '-' + opened_jobs[opened_job].Target_ID);
-                let Job_ID = '' + opened_jobs[opened_job].Source_ID + '-' + opened_jobs[opened_job].Target_ID;
-                console.log('pre delete:', Memory.jobs[Job_ID].Assigned_ID.length);
-                Memory.jobs[Job_ID].Assigned_ID = _.filter(Memory.jobs[Job_ID].Assigned_ID, (eitity) => eitity != Drone_ID);
-                console.log('post delete:', Memory.jobs[Job_ID].Assigned_ID.length);
-            }
-            delete(Memory.drones[Drone_ID]);
-            delete(Memory.creeps[Drone_ID]);
+            return true;
+        } else {
+            return false;
         }
     },
 
@@ -127,29 +141,29 @@ var hive_mind = {
 
             if(Game.creeps[unemployed_id]){
                 let jobs = _.filter(Memory.jobs,(Job) => Job.Assigned_ID.length < Job.Assigned_Max);
-                
+                //console.log('Open Positions:', jobs.length)
                 if(jobs.length != 0)
                 {
                     switch(Memory.drones[unemployed_id].Drone_Role){
-                        case 'transporter':
-                            if(!require('job_route').assign(unemployed_id))
+                        case 'transport':
+                            if(require('job_route').assign(unemployed_id) == -2)
                                 Memory.jobless.push(unemployed_id);
                             break;
-                        case 'harvester':
-                            if(!require('job_harvest').assign(unemployed_id))
+                        case 'harvest':
+                            if(require('job_harvest').assign(unemployed_id) == -2)
                                 Memory.jobless.push(unemployed_id);
                             break;
-                        case 'builder':
-                            if(!require('job_upgrade').assign(unemployed_id))
-                                if(!require('job_repair').assign(unemployed_id))
-                                    if(!require('job_build').assign(unemployed_id)){
+                        case 'build':
+                            if(require('job_upgrade').assign(unemployed_id) != 0)
+                                if(require('job_repair').assign(unemployed_id) != 0)
+                                    if(require('job_build').assign(unemployed_id) == -2 ){
                                         Memory.jobless.push(unemployed_id);
                                         let spawn = Game.getObjectById(Memory.drones[unemployed_id].Spawn_ID);
                                         Memory.jobs[spawn.id + '-' + spawn.room.controller.id].Assigned_Max += 1;
                                     }
                             break;
                         case 'scout':
-                            if(!require('job_scout').assign(unemployed_id))
+                            if(require('job_scout').assign(unemployed_id) != 0)
                                 Memory.jobless.push(unemployed_id);
                             break;
                     }
@@ -162,7 +176,7 @@ var hive_mind = {
 
     processJob: function(Job_ID, job_count){
         switch(Memory.jobs[Job_ID].Job_Type){
-            case 'route':
+            case 'transport':
                 require('job_route').work(Job_ID);
                 job_count['TRANSPORTER'] += Memory.jobs[Job_ID].Assigned_Max;
                 break;
@@ -192,36 +206,38 @@ var hive_mind = {
     },
 
     populationControll: function(Nest_ID, job_count){
-        let roles = ['transporter','harvester','builder','scout'];
-    for(let role in roles){
-        let filtered_drones = _.filter(Memory.drones, (Drone) => Drone.Drone_Role == roles[role]);
-        filtered_drones = filtered_drones.concat(_.filter(Memory.nests[Nest_ID].Drone_Queue, (Drone) => Drone.role == roles[role]));
-        if(Memory.nests[Nest_ID].Queue_Current.role == roles[role]){
-            filtered_drones.push(Memory.nests[Nest_ID].Queue_Current);
+        let roles = ['transport','harvest','build','scout'];
+        for(let role in roles){
+            let filtered_drones = _.filter(Memory.drones, (Drone) => Drone.Drone_Role == roles[role]);
+
+            filtered_drones = filtered_drones.concat(_.filter(Memory.nests[Nest_ID].Drone_Queue, (Drone) => Drone.role == roles[role]));
+            if(Memory.nests[Nest_ID].Queue_Current.role == roles[role]){
+                filtered_drones.push(Memory.nests[Nest_ID].Queue_Current);
+            }
+
+            switch(roles[role]){
+                case 'transport':
+                    if(job_count['TRANSPORTER'] - filtered_drones.length > 0){
+                        require('nest_hatchery').queue_transporter(Nest_ID);
+                    }
+                    break;
+                case 'harvest':
+                    if(job_count['HARVESTER'] - filtered_drones.length > 0){
+                        require('nest_hatchery').queue_harvester(Nest_ID);
+                    }
+                    break;
+                case 'build':
+                    if(10 - filtered_drones.length > 0){
+                        require('nest_hatchery').queue_builder(Nest_ID);
+                    }
+                    break;
+                case 'scout':
+                    if(5 - filtered_drones.length > 0){
+                        require('nest_hatchery').queue_scout(Nest_ID);
+                    }
+                    break;
+            }
         }
-        switch(roles[role]){
-            case 'transporter':
-                if(job_count['TRANSPORTER'] - filtered_drones.length > 0){
-                    require('nest_hatchery').queue_transporter(Nest_ID);
-                }
-                break;
-            case 'harvester':
-                if(job_count['HARVESTER'] - filtered_drones.length > 0){
-                    require('nest_hatchery').queue_harvester(Nest_ID);
-                }
-                break;
-            case 'builder':
-                if(6 - filtered_drones.length > 0){
-                    require('nest_hatchery').queue_builder(Nest_ID);
-                }
-                break;
-            case 'scout':
-                if(10 - filtered_drones.length > 0){
-                    require('nest_hatchery').queue_scout(Nest_ID);
-                }
-                break;
-        }
-    }
     },
 };
 

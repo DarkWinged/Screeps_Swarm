@@ -1,3 +1,4 @@
+//Legacy Code, only here as a reminder of how far this project has come. 
 var job = require('job');
 var job_deposit = {
     //require('job_deposit').init('drone_id','drone_id')
