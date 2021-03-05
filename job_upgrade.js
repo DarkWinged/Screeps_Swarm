@@ -16,20 +16,25 @@ var job_upgrade = {
                 delete(Memory.jobs[Job_ID].Assigned_ID[drone]);
                 Memory.jobs[Job_ID].Assigned_ID = _.filter(Memory.jobs[Job_ID].Assigned_ID, (entity) => entity != null);
             } else if(creep) {
-                let spawn  = Game.getObjectById(Memory.jobs[Job_ID].Source_ID);
-
                 var target = Game.getObjectById(Memory.jobs[Job_ID].Target_ID);
-                if(target)
-                {
+                if(target) {
                     creep.say('U:' + Math.floor((target.progress/target.progressTotal)*100) + '%');
-                    
-                    if(creep.store[RESOURCE_ENERGY] < 1 || Memory.drones[creep.name].State == true) {
-                        Memory.drones[creep.name].State = true;
-                        require('job_build').resuply(creep.name);
-                    } else if(creep.upgradeController(target) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+
+                    if(creep.store[RESOURCE_ENERGY] < 1)
+                            Memory.drones[creep.name].Resupply = true;
+
+                            
+                    if(Memory.drones[creep.name].Resupply) {
+                        require('job_build').resuply(creep.name, Job_ID);
                     } else {
-                        Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]].Fitness_Score += 1;
+                        let opening_capacity = creep.store.getUsedCapacity();
+                        
+                        if(creep.upgradeController(target) == ERR_NOT_IN_RANGE) {
+                            creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+                        } else {
+                            let closing_capacity = creep.store.getUsedCapacity();
+                            Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]].Fitness_Score += opening_capacity - closing_capacity;
+                        }
                     }
                 }
             }
@@ -56,8 +61,8 @@ var job_upgrade = {
         return -2;
     },
 
-    close_job: function(Job_ID){
-        job.close_job(Job_ID);
+    closeJob: function(Job_ID){
+        job.closeJob(Job_ID);
     }
      
 };

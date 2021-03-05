@@ -1,26 +1,26 @@
 var nest = require('nest');
 var nest_hatchery = {
     //require('nest_hatchery').init('8c172c4b1d50f789d3f131ec');
-    init: function(nest_id){
-        nest.init(nest_id);
-        Memory.nests[nest_id].Role = 'hatchery';
-        Memory.nests[nest_id].Drone_Queue = [];
-        Memory.nests[nest_id].Queue_Current = {state: false};
-        Memory.nests[nest_id].Current_Cost = 0;
-        let spawn = Game.getObjectById(nest_id);
+    init: function(Nest_ID){
+        nest.init(Nest_ID);
+        Memory.nests[Nest_ID].Role = 'hatchery';
+        Memory.nests[Nest_ID].Drone_Queue = [];
+        Memory.nests[Nest_ID].Queue_Current = {state: false};
+        Memory.nests[Nest_ID].Current_Cost = 0;
+        let spawn = Game.getObjectById(Nest_ID);
         var sources = spawn.room.find(FIND_SOURCES);
+        Game.flags['harvest0'].pos = spawn.pos;
         for(var ESource in sources){
-            require('job_harvest').init(nest_id, sources[ESource].id);
-            require('nest_hatchery').queue_harvester(nest_id);
-            require('nest_hatchery').queue_transporter(nest_id);
-            require('nest_hatchery').queue_transporter(nest_id);
+            require('nest_hatchery').queueDrone(Nest_ID, 'transport', {MOVE:2, CARRY:2}, 0.8);
+            require('nest_hatchery').queueDrone(Nest_ID, 'transport', {MOVE:2, CARRY:2}, 0.8);
+            require('nest_hatchery').queueDrone(Nest_ID, 'harvest', {WORK:2, MOVE:1, CARRY:1}, 0.8);
         };
-        require('job_upgrade').init(nest_id,Game.getObjectById(nest_id).room.controller.id);
-        require('job_scout').init(nest_id,'Flag1');
-        return nest_id;
+        require('job_upgrade').init(Nest_ID,Game.getObjectById(Nest_ID).room.controller.id);
+        return Nest_ID;
     },
     
     work: function(Nest_ID){
+        Memory.nests[Nest_ID].Drone_Queue = Memory.nests[Nest_ID].Drone_Queue.sort((a,b) => (a.priority < b.priority) ? 1 : -1);
         require('nest_hatchery').process_queue(Nest_ID);
     },
 
@@ -40,7 +40,7 @@ var nest_hatchery = {
                 return (structure.structureType == STRUCTURE_EXTENSION)}
         });
         let expansion_sum = 0;
-        for(structure in expansions){
+        for(let structure in expansions){
             expansion_sum += expansions[structure].store.getCapacity(RESOURCE_ENERGY);
         }
 
@@ -112,6 +112,9 @@ var nest_hatchery = {
             case 'scout':
                 require('drone_scout').init(drone_id, Spawn_ID);
                 break;
+            case 'heal':
+                require('drone_healer').init(drone_id, Spawn_ID);
+                break;
         }
     },
     
@@ -126,9 +129,7 @@ var nest_hatchery = {
                     );*/
                     
                 if(Memory.nests[Nest_ID].Queue_Current.state == false){
-                    Memory.nests[Nest_ID].Drone_Queue.reverse();
                     Memory.nests[Nest_ID].Queue_Current = Memory.nests[Nest_ID].Drone_Queue.pop();
-                    Memory.nests[Nest_ID].Drone_Queue.reverse();
                     Memory.nests[Nest_ID].Current_Cost = require('nest_hatchery').calculate_cost(Memory.nests[Nest_ID].Queue_Current.genome, Nest_ID);
                 }
                 
@@ -144,7 +145,7 @@ var nest_hatchery = {
                             }
                         });
                         let expansion_sum = 0;
-                        for(structure in expansions){
+                        for(let structure in expansions){
                             expansion_sum += expansions[structure].store.getUsedCapacity(RESOURCE_ENERGY);
                         }
                         let availible_energy = spawn.store.getUsedCapacity(RESOURCE_ENERGY) + expansion_sum;
@@ -161,21 +162,8 @@ var nest_hatchery = {
         }
     },
     
-    //The following queue functions need to be combined into a single queueDrone: function (ID, Role, (genome? genewrite? Species?))
-    queue_harvester: function(Nest_ID){
-        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'harvest', role: 'harvest', genome: {WORK:5, MOVE:2, CARRY:1}});
-    },
-    
-    queue_transporter: function(Nest_ID){
-        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'transport', role: 'transport', genome: {MOVE:2, CARRY:4}});
-    },
-
-    queue_builder: function(Nest_ID){
-        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'build', role: 'build', genome: {WORK:2, MOVE:2, CARRY:2}});
-    },
-
-    queue_scout: function(Nest_ID){
-        Memory.nests[Nest_ID].Drone_Queue.push({s_name: 'scout', role: 'scout', genome: {TOUGH:4, MOVE:4, ATTACK:2}});
+    queueDrone: function(Nest_ID, Role, Genome, Priority){
+        Memory.nests[Nest_ID].Drone_Queue.push({s_name: Role, role: Role, genome: Genome, priority: Priority});
     }
 };
 

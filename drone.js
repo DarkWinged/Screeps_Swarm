@@ -6,7 +6,7 @@ var drone = {
             Drone_Role: 'drone',
             Fitness_Score: 100
         };
-        Memory.jobless.push(drone_id);
+        require('hive_mind').unemploy(drone_id);
         return drone_id;
     },
 
@@ -19,7 +19,7 @@ var drone = {
 
         for(let closed_job in closed_jobs){
             let Job_ID = '' + closed_jobs[closed_job].Source_ID + '-' + closed_jobs[closed_job].Target_ID;
-            require('job').close_job(Job_ID);
+            require('job').closeJob(Job_ID);
         }
 
         for(let opened_job in opened_jobs){

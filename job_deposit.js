@@ -8,7 +8,7 @@ var job_deposit = {
         Memory.jobs[Job_ID].cargo_max = Game.creeps[Entity_ID_A].store.getCapacity();
     },
 
-    close_job: function(Job_ID){
+    closeJob: function(Job_ID){
         job.init(Job_ID);
     }
      

@@ -18,14 +18,33 @@ var job_route = {
                         return (
                             (
                                 structure.structureType == STRUCTURE_EXTENSION ||
-                                structure.structureType == STRUCTURE_SPAWN ||
-                                structure.structureType == STRUCTURE_STORAGE ||
-                                structure.structureType == STRUCTURE_TOWER
+                                structure.structureType == STRUCTURE_SPAWN
                             ) &&
-                            structure.store.getFreeCapacity(RESOURCE_ENERGY) >= 50
+                            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
                         );
                     }
                 });
+                
+                if(creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0){
+                    Memory.drones[creep.name].State = true;
+                }
+                if(creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0){
+                    Memory.drones[creep.name].State = false;
+                }
+
+                if(end == null){
+                    end = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+                        filter: (structure) => {
+                            return (
+                                (
+                                    structure.structureType == STRUCTURE_STORAGE ||
+                                    structure.structureType == STRUCTURE_TOWER
+                                ) &&
+                                structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+                            );
+                        }
+                    });
+                }
 
                 if(end == null){
                     end = Game.getObjectById(Memory.drones[creep.name].Spawn_ID);
@@ -41,12 +60,16 @@ var job_route = {
                         }
                     }
                 } else {
-                    if(creep.transfer(end, RESOURCE_ENERGY, 50) == ERR_NOT_IN_RANGE){
+                    let opening_capacity = creep.store.getFreeCapacity();
+
+                    if(creep.transfer(end, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE){
                         creep.moveTo(end, {visualizePathStyle: {stroke: '#ffffff'}});
                     } else {
-                        Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]].Fitness_Score += 50;
+                        let closing_capacity = creep.store.getFreeCapacity();
 
-                        if(creep.store.getUsedCapacity(RESOURCE_ENERGY) < 50){
+                        Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]].Fitness_Score += closing_capacity - opening_capacity;
+
+                        if(creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0){
                             Memory.drones[creep.name].State = false;
                         }
                     }
@@ -63,8 +86,8 @@ var job_route = {
         return job.assign(Drone_ID, Memory.drones[Drone_ID].Drone_Role);
     },
 
-    close_job: function(Job_ID){
-        job.close_job(Job_ID);
+    closeJob: function(Job_ID){
+        job.closeJob(Job_ID);
     }
         
 };

@@ -13,8 +13,31 @@ var job = {
 
     assign: function(Drone_ID){
         let jobs = _.filter(Memory.jobs, (Job) => Job.Job_Type == Memory.drones[Drone_ID].Drone_Role && Job.Assigned_ID.length < Job.Assigned_Max);
-        //console.log(jobs.length);
-        console.log('Positions for:', Memory.drones[Drone_ID].Drone_Role, jobs.length);
+        let jobs_inroom = _.filter(jobs, (Job) => (
+            (
+                Game.getObjectById(Job.Source_ID) != null &&
+                Game.getObjectById(Job.Source_ID).room == Game.creeps[Drone_ID].room
+            ) || (
+                Game.flags[Job.Source_ID] != null &&
+                Game.flags[Job.Source_ID].room == Game.creeps[Drone_ID].room
+            )
+        ))
+        
+        console.log('Positions for:', Memory.drones[Drone_ID].Drone_ID, jobs.length);
+
+        for(let job in jobs_inroom){
+            let Job_ID = '' + jobs_inroom[job].Source_ID + '-' + jobs_inroom[job].Target_ID;
+            let drone_ids = Memory.jobs[Job_ID].Assigned_ID;
+            for(let id in drone_ids){
+                if(drone_ids[id] == Drone_ID){
+                    console.log('Is drone assigned:', Job_ID);
+                    return -1;
+                }
+            }
+            Memory.jobs[Job_ID].Assigned_ID.push(Drone_ID);
+            console.log('Drones assigned to:', Job_ID, drone_ids.length, '/', Memory.jobs[Job_ID].Assigned_Max);
+            return 0;
+        }
         for(let job in jobs){
             let Job_ID = '' + jobs[job].Source_ID + '-' + jobs[job].Target_ID;
             let drone_ids = Memory.jobs[Job_ID].Assigned_ID;
@@ -31,10 +54,12 @@ var job = {
         return -2;
     },
 
-    close_job: function(Job_ID){
-        for(let drone in Memory.jobs[Job_ID].Assigned_ID){
-            if(Memory.jobs[Job_ID].Assigned_ID[drone] != null && Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]])
-                Memory.jobless.push(Memory.jobs[Job_ID].Assigned_ID[drone]);
+    closeJob: function(Job_ID){
+        let assigned = Memory.jobs[Job_ID].Assigned_ID;
+        for(let drone in assigned){
+            let Drone_ID = assigned[drone];
+            if(Game.creeps[Drone_ID] != null)
+                require('hive_mind').unemploy(Drone_ID);
         }
         //console.log('Closed Job: ', Job_ID);
         delete(Memory.jobs[Job_ID]);

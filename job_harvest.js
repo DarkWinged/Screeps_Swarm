@@ -9,35 +9,41 @@ var job_harvest = {
     },
     
     work: function(Job_ID){
+        let origin = Game.flags[Memory.jobs[Job_ID].Source_ID];
         for(let drone in Memory.jobs[Job_ID].Assigned_ID){
             let creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]];
 
             if(creep != null){
                 let source = Game.getObjectById(Memory.jobs[Job_ID].Target_ID);
-                
-                let valid_container = creep.room.find(FIND_STRUCTURES, {
-                    filter: (structure) => {
-                        return (
-                            structure.structureType == STRUCTURE_CONTAINER &&
-                            (
-                                structure.pos.x == creep.pos.x &&
-                                structure.pos.y == creep.pos.y
-                            )
-                        );
-                    }
-                });
-
-                if(
-                    creep.store.getFreeCapacity() > 0 ||
-                    (
-                        valid_container.length > 0 &&
-                        valid_container[0].store.getFreeCapacity() > 0
-                    )
-                ){
-                    if(creep.harvest(source) == ERR_NOT_IN_RANGE){
-                        creep.moveTo(source, {visualizePathStyle: {stroke: '#ffffff'}});
-                    } else {
-                        Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]].Fitness_Score += 2;
+                if(creep.room != origin.room){
+                    creep.moveTo(origin, {visualizePathStyle: {stroke: '#ffffff'}});
+                } else {
+                    let valid_container = creep.room.find(FIND_STRUCTURES, {
+                        filter: (structure) => {
+                            return (
+                                structure.structureType == STRUCTURE_CONTAINER &&
+                                (
+                                    structure.pos.x == creep.pos.x &&
+                                    structure.pos.y == creep.pos.y
+                                )
+                            );
+                        }
+                    });
+                    
+                    if(
+                        creep.store.getFreeCapacity() > 0 ||
+                        (
+                            valid_container.length > 0 &&
+                            valid_container[0].store.getFreeCapacity() > 0
+                        )
+                    ){
+                        let result = creep.harvest(source);
+                        if(result == ERR_NOT_IN_RANGE){
+                            creep.moveTo(source, {visualizePathStyle: {stroke: '#ffffff'}});
+                        } 
+                        if(result == 0){
+                            Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]].Fitness_Score += 2;
+                        }
                     }
                 }
             } else {
@@ -50,8 +56,8 @@ var job_harvest = {
         return job.assign(Drone_ID, Memory.drones[Drone_ID].Drone_Role);
     },
 
-    close_job: function(Job_ID){
-        job.close_job(Job_ID);
+    closeJob: function(Job_ID){
+        job.closeJob(Job_ID);
     }
       
 };

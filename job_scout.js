@@ -4,17 +4,17 @@ var job_scout = {
     init: function(Source_ID, Target_ID){
         let Job_ID = job.init(Source_ID, Target_ID);
         Memory.jobs[Job_ID].Job_Type = 'scout';
-        Memory.jobs[Job_ID].Assigned_Max = 10;
+        Memory.jobs[Job_ID].Assigned_Max = 5;
         return Job_ID;
     },
     
     //This needs to be broken up into several small functions
     work: function(Job_ID){
         for(let drone in Memory.jobs[Job_ID].Assigned_ID){
-            creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]];
+            let creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]];
 
             if(creep){
-                let flag = Game.flags[Memory.jobs[Job_ID].Target_ID];
+                let flag = Game.flags[Memory.jobs[Job_ID].Source_ID];
 
                 if(flag != undefined){
                     if(creep.room != flag.room) {
@@ -50,7 +50,7 @@ var job_scout = {
                                     filter: function(structure) {
                                         if(
                                            structure.structureType != STRUCTURE_ROAD &&
-                                        structure.structureType != STRUCTURE_CONTROLLER
+                                            structure.structureType != STRUCTURE_CONTROLLER
                                         ){
                                            return structure;
                                         }
@@ -91,8 +91,8 @@ var job_scout = {
         return job.assign(Drone_ID, Memory.drones[Drone_ID].Drone_Role);
     },
 
-    close_job: function(Job_ID){
-        job.close_job(Job_ID);
+    closeJob: function(Job_ID){
+        job.closeJob(Job_ID);
     }
       
 };
