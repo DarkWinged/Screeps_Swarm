@@ -1,4 +1,4 @@
-//Legacy Code
+//Legacy Code only here as a reminder
 var spawn_queue = {
     
     init: function(spawn){

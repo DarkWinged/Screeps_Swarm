@@ -2,46 +2,92 @@ var job = require('job');
 var job_route = {
     //require('job_route').init('drone_id','nest_id')
     init: function(Source_ID, Target_ID){
-        job.init(Source_ID, Target_ID);
-        let Job_ID = '' + Source_ID + '-' + Target_ID;
-        Memory.jobs[Job_ID].Assigned_ID = 'null';
-        Memory.jobs[Job_ID].Cargo_Min = 'null';
-        Memory.jobs[Job_ID].Job_Type = 'route';
+        let Job_ID = job.init(Source_ID, Target_ID);
+        Memory.jobs[Job_ID].Job_Type = 'transport';
+        Memory.jobs[Job_ID].Assigned_Max = 2;
+        return Job_ID;
     },
     
     work: function(Job_ID){
-        if(Game.creeps[Memory.jobs[Job_ID].Assigned_ID]){
-            let start = Game.creeps[Memory.jobs[Job_ID].Source_ID];
-            let end = Game.getObjectById(Memory.jobs[Job_ID].Target_ID);
-            let creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID];
-            
-            if(creep.store.getFreeCapacity() > 0){
-                if(start.transfer(creep, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE){
-                    creep.moveTo(start.pos.x,start.pos.y, {visualizePathStyle: {stroke: '#ffffff'}});
+        for(let drone in Memory.jobs[Job_ID].Assigned_ID){
+            if(Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]] != undefined){
+                let creep = Game.creeps[Memory.jobs[Job_ID].Assigned_ID[drone]];
+                let start = Game.creeps[Memory.jobs[Job_ID].Source_ID];
+                let end = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+                    filter: (structure) => {
+                        return (
+                            (
+                                structure.structureType == STRUCTURE_EXTENSION ||
+                                structure.structureType == STRUCTURE_SPAWN
+                            ) &&
+                            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+                        );
+                    }
+                });
+                
+                if(creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0){
+                    Memory.drones[creep.name].State = true;
+                }
+                if(creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0){
+                    Memory.drones[creep.name].State = false;
+                }
+
+                if(end == null){
+                    end = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+                        filter: (structure) => {
+                            return (
+                                (
+                                    structure.structureType == STRUCTURE_STORAGE ||
+                                    structure.structureType == STRUCTURE_TOWER
+                                ) &&
+                                structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+                            );
+                        }
+                    });
+                }
+
+                if(end == null){
+                    end = Game.getObjectById(Memory.drones[creep.name].Spawn_ID);
+                    //console.log(creep.name, end);
+                }
+
+                if(!Memory.drones[creep.name].State){
+                    if(start.transfer(creep, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE){
+                        creep.moveTo(start, {visualizePathStyle: {stroke: '#ffffff'}});
+                    } else {
+                        if(creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0){
+                            Memory.drones[creep.name].State = true;
+                        }
+                    }
+                } else {
+                    let opening_capacity = creep.store.getFreeCapacity();
+
+                    if(creep.transfer(end, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE){
+                        creep.moveTo(end, {visualizePathStyle: {stroke: '#ffffff'}});
+                    } else {
+                        let closing_capacity = creep.store.getFreeCapacity();
+
+                        Memory.drones[Memory.jobs[Job_ID].Assigned_ID[drone]].Fitness_Score += closing_capacity - opening_capacity;
+
+                        if(creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0){
+                            Memory.drones[creep.name].State = false;
+                        }
+                    }
                 }
             } else {
-                if(creep.transfer(end, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE){
-                    creep.moveTo(end, {visualizePathStyle: {stroke: '#ffffff'}});
-                }
+                console.log('drone', Memory.jobs[Job_ID].Assigned_ID[drone], 'does not exist!');
+                delete(Memory.jobs[Job_ID].Assigned_ID[drone]);
+                Memory.jobs[Job_ID].Assigned_ID = _.filter(Memory.jobs[Job_ID].Assigned_ID, (eitity) => eitity != null);
             }
         }
     },
 
     assign: function(Drone_ID){
-        let jobs = _.filter(Memory.jobs, (Job) => Job.Job_Type == 'route');
-        for(var job in jobs){
-            let job_id = '' + jobs[job].Source_ID + '-' + jobs[job].Target_ID;
-            if(Memory.jobs[job_id].Assigned_ID == 'null'){
-                Memory.jobs[job_id].Assigned_ID = Drone_ID;
-                if(Memory.jobs[job_id].Cargo_Min == 'null'){
-                    Memory.jobs[job_id].Cargo_Min = Game.creeps[Memory.jobs[job_id].Source_ID].store.getCapacity(RESOURCE_ENERGY);
-                }
-                console.log('New assignment:', Drone_ID, 'at', job_id);
-                return true;
-                break;
-            }
-        }
-        false;
+        return job.assign(Drone_ID, Memory.drones[Drone_ID].Drone_Role);
+    },
+
+    closeJob: function(Job_ID){
+        job.closeJob(Job_ID);
     }
         
 };
